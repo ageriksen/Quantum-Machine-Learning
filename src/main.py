@@ -36,3 +36,21 @@ for feature_idx in range(p):
     circuit.ry( 2*np.pi*sample[feature_idx], data_register[feature_idx])
 
 print(circuit)
+
+
+n_params = p
+theta = 2*np.pi*np.random.uniform(size=n_params)
+
+for i in range(n_params):
+    circuit.rx(theta[i], data_register[i])
+
+
+end = int((n_params+1)/2)
+print("stop at i = {}".format(end))
+for i in range(1, end):
+    j = 2*i-2
+    k = 2*i-1
+    print(j, k)
+    circuit.cx(data_register[j], data_register[k])
+
+print(circuit)
