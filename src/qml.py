@@ -116,6 +116,12 @@ class QML:
                 actual ansatz as well, because now we just run with the same values for the gates in the circuit.
                 Trying to find some way to adjust one of the gate values without remaking the whole circuit
                 """
+                print(self.circuit.depth())
+                """
+                We need to reset the circuit every time, now we are just adding to the end of the existing circuit
+                this is prob because we're using self.circuit stuff
+                """
+
 
                 self.theta[i] += np.pi / 2
                 self.update_ansatz()
