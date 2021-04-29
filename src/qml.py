@@ -58,15 +58,19 @@ class QML:
 
 
 
-    def ansatz(self, n_ansatz_parameters):
-        self.n_ansatz_parameters = n_ansatz_parameters
-        self.theta = np.random.randn(self.n_ansatz_parameters)
+    def ansatz(self, n_model_parameters):
+        self.n_model_parameters = n_model_parameters
+        self.theta = np.random.randn(self.n_model_parameters)
 
         for i in range(len(self.feature_vector)):
             self.circuit.rx(self.theta[i], self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
             self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit - 1])
+
+        self.circuit.ry(self.theta[-1], self.quantum_register[-1])
+        self.circuit.measure(self.quantum_register[-1], self.classical_register)
+
 
 
 
@@ -85,15 +89,21 @@ class QML:
 
 
 
-    def train(self, target, epochs=100, learning_rate=0.1):
-        theta_gradient = np.zeros_like(self.theta)
+    def train(self, target, epochs=100, learning_rate=0.1, debug=True):
 
         for epoch in range(epochs):
             self.run()
             mean_squared_error = (self.model_prediction - target)**2
             mse_derivative = 2 * (self.model_prediction - target)
+            theta_gradient = np.zeros_like(self.theta)
 
-            for i in range(self.n_ansatz_parameters):
+            for i in range(self.n_model_parameters):
+
+                """
+                We are being stupid here, we need to update the thetas in the
+                actual ansatz as well, because now we just run with the same values for the gates in the circuit.
+                Trying to find some way to adjust one of the gate values without remaking the whole circuit
+                """
 
                 self.theta[i] += np.pi / 2
                 self.run()
@@ -106,15 +116,21 @@ class QML:
                 self.theta[i] += np.pi / 2
                 theta_gradient[i] = (out_1 - out_2) / 2
 
+                if debug:
+                    print(f'output 1: {out_1}')
+                    print(f'output 2: {out_2}')
+
 
             self.theta = self.theta - learning_rate * theta_gradient * mse_derivative
             print(mean_squared_error)
 
 
 
+seed = 2021
+np.random.seed(seed)
 
-
-qml = QML(4, 1, 2021)
+qml = QML(4, 1, seed)
 qml.encoder([1.0, 1.5, 2.0, 0.3])
 qml.ansatz(5)
+print(qml.circuit)
 qml.train(0.7)
