@@ -73,6 +73,18 @@ class QML:
 
 
 
+    def update_ansatz(self):
+        for i in range(len(self.feature_vector)):
+            self.circuit.rx(self.theta[i], self.quantum_register[i])
+
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit - 1])
+
+        self.circuit.ry(self.theta[-1], self.quantum_register[-1])
+        self.circuit.measure(self.quantum_register[-1], self.classical_register)
+
+
 
     def run(self, backend='qasm_simulator', shots=1000):
         """
@@ -89,7 +101,7 @@ class QML:
 
 
 
-    def train(self, target, epochs=100, learning_rate=0.1, debug=True):
+    def train(self, target, epochs=100, learning_rate=0.1, debug=False):
 
         for epoch in range(epochs):
             self.run()
@@ -106,10 +118,12 @@ class QML:
                 """
 
                 self.theta[i] += np.pi / 2
+                self.update_ansatz()
                 self.run()
                 out_1 = self.model_prediction
 
                 self.theta[i] -= np.pi
+                self.update_ansatz()
                 self.run()
                 out_2 = self.model_prediction
 
@@ -133,4 +147,5 @@ qml = QML(4, 1, seed)
 qml.encoder([1.0, 1.5, 2.0, 0.3])
 qml.ansatz(5)
 print(qml.circuit)
-qml.train(0.7)
+qml.train(0.7, epochs=10)
+print(qml.circuit)
