@@ -4,47 +4,14 @@ import qiskit as qk
 import matplotlib.pyplot as plt
 from sklearn import datasets
 
-
-
-
-
-def sklearn_iris_to_df(sklearn_dataset):
-    """
-    processes the dataset from sklearn into a pandas dataframe with an
-    additional column with string definition of the three classes.
-
-    Input: (sklearn dataset)
-    Output: (Pandas DataFrame Object)
-    """
-    df = pd.DataFrame(sklearn_dataset.data, columns=sklearn_dataset.feature_names)
-    df['target'] = pd.Series(sklearn_dataset.target)
-    df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
-    return df
-
-
-
-def look_at_data(dataframe):
-    """
-    Simple function to generate scatter plot from a pandas dataframe
-    """
-    fig, ax = plt.subplots(figsize=(8, 5))
-    colors = ['red', 'green', 'blue']
-
-    for i, s in enumerate(dataframe.species.unique()):
-        dataframe[dataframe.species==s].plot.scatter(x = 'sepal length (cm)',
-                                            y = 'sepal width (cm)',
-                                            label = s,
-                                            color = colors[i],
-                                            ax = ax)
-    plt.show()
-
-
-
 class QML:
     def __init__(self, n_quantum, n_classic, seed):
         self.n_quantum = n_quantum
         self.n_classic = n_classic
         self.seed = seed
+        self.makeCircuit(n_quantum,n_classic)
+
+    def makeCircuit(self, n_quantum, n_classic):
         self.quantum_register = qk.QuantumRegister(n_quantum)
         self.classical_register = qk.ClassicalRegister(n_classic)
         self.circuit = qk.QuantumCircuit(self.quantum_register, self.classical_register)
@@ -116,7 +83,7 @@ class QML:
                 actual ansatz as well, because now we just run with the same values for the gates in the circuit.
                 Trying to find some way to adjust one of the gate values without remaking the whole circuit
                 """
-                print(self.circuit.depth())
+                print("*"*20, "\n",self.circuit.depth(),"\n","*"*20)
                 """
                 We need to reset the circuit every time, now we are just adding to the end of the existing circuit
                 this is prob because we're using self.circuit stuff
@@ -124,6 +91,7 @@ class QML:
 
 
                 self.theta[i] += np.pi / 2
+                self.makeCircuit(self.n_quantum,self.n_classic)
                 self.update_ansatz()
                 self.run()
                 out_1 = self.model_prediction
@@ -141,6 +109,7 @@ class QML:
                     print(f'output 2: {out_2}')
 
 
+            print(self.circuit)
             self.theta = self.theta - learning_rate * theta_gradient * mse_derivative
             print(mean_squared_error)
 
@@ -154,4 +123,3 @@ qml.encoder([1.0, 1.5, 2.0, 0.3])
 qml.ansatz(5)
 print(qml.circuit)
 qml.train(0.7, epochs=10)
-print(qml.circuit)
