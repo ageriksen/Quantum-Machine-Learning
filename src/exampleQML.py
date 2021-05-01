@@ -25,6 +25,7 @@ def model(feature_vector, theta, shots=1000):
     circuit.measure(q_reg[-1], c_reg)
 
     #print(circuit.depth())
+    print(circuit)
 
     job = qk.execute(circuit,
                     backend=qk.Aer.get_backend('qasm_simulator'),
