@@ -8,13 +8,19 @@ class QML:
     def __init__(self, n_quantum, n_classic, seed, ansatz="basic_ansatz", encoder="basic_encoder"):
         self.n_quantum = n_quantum
         self.n_classic = n_classic
+
         self.seed = seed
+
         self.ansatzes = {"basic_ansatz":self.basicAnsatz}
         self.encoders = {"basic_encoder":self.basicEncoder}
         self.ansatz = self.ansatzes[ansatz]
         self.encoder = self.encoders[encoder]
 
     def setModel(self, feature_vector, target, n_model_parameters):
+        """
+        defines the features, targets and model parameters to be input into the
+        model before compiling to circuits and jobs.
+        """
         self.feature_vector = feature_vector
         self.target = target
         self.n_model_parameters = n_model_parameters
@@ -34,8 +40,10 @@ class QML:
     #====================================================================================================
     #   === encoders & ansatzes ===
     def basicEncoder(self):
+#        for i, feature in enumerate(self.feature_vector):
+#            self.circuit.ry(feature, self.quantum_register[i])
         for i, feature in enumerate(self.feature_vector):
-            self.circuit.ry(feature, self.quantum_register[i])
+            self.circuit.ry(2*np.pi*feature, self.quantum_register[i])
 
 
     def basicAnsatz(self):
@@ -43,7 +51,7 @@ class QML:
             self.circuit.rx(self.theta[i], self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
-            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit - 1])
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
 
         self.circuit.ry(self.theta[-1], self.quantum_register[-1])
         self.circuit.measure(self.quantum_register[-1], self.classical_register)
@@ -59,7 +67,7 @@ class QML:
         self.classical_register = qk.ClassicalRegister(self.n_classic)
         self.circuit = qk.QuantumCircuit(self.quantum_register, self.classical_register)
 
-        self.theta = np.random.randn(self.n_model_parameters)
+        self.theta = 2*np.pi*np.random.randn(self.n_model_parameters)
 
         self.encoder()
         self.ansatz()
@@ -108,20 +116,30 @@ class QML:
             print(mean_squared_error)
 
 
-
 if __name__ == "__main__":
     seed = 2021
     np.random.seed(seed)
 
-    n_quantum = 4
+    dic_data = datasets.load_iris(as_frame=True)
+    df = dic_data['frame']
+    features = dic_data['data']
+    targets = dic_data['target']
+    species = dic_data['target_names']
+
+    index = np.where(targets < 2 )
+
+    df = df.iloc[index]
+    features = features.iloc[index]
+    targets = targets.iloc[index]
+
+    n_model_parameters = features.columns.shape[0] + 1
+
+    n_quantum = features.columns.shape[0]
     n_classic = 1
 
-    target = 0.7
-    feature_vector = np.array([1.0, 1.5, 2.0, 0.3])
-    n_model_parameters = 5
-
     qml = QML(n_quantum, n_classic, seed)
-    qml.setModel(feature_vector,target, n_model_parameters)
+    #qml.setModel(feature_vector,target, n_model_parameters)
+    qml.setModel(features.iloc[0],targets[0], n_model_parameters)
     qml.model()
     print(qml.circuit)
-    qml.train(target, epochs=10)
+    qml.train(targets[0], epochs=10)
