@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn import datasets
 
 class QML:
-    def __init__(self, n_quantum, n_classic, seed, ansatz="basic_ansatz", encoder="basic_encoder"):
+    def __init__(self, n_quantum, n_classic, seed, ansatz="basic_ansatz", encoder="basic_encoder", lossfunc="BCE", delLoss="BCEderivative"):
         self.n_quantum = n_quantum
         self.n_classic = n_classic
 
@@ -15,6 +15,11 @@ class QML:
         self.encoders = {"basic_encoder":self.basicEncoder}
         self.ansatz = self.ansatzes[ansatz]
         self.encoder = self.encoders[encoder]
+
+        self.loss = {"BCE":self.BCE}
+        self.delLoss = {"BCEderivative": self.BCEderivative}
+        self.lossFunction = self.loss[lossfunc]
+        self.lossDerivative = self.delLoss[delLoss]
 
     def setModel(self, feature_vector, target, n_model_parameters):
         """
@@ -81,6 +86,19 @@ class QML:
         self.model_prediction = results['0'] / shots
         return self.model_prediction
 
+    def BCE(self,out, target):
+        #TODO figure out what N stands for. And where the loop fits in. 
+        N = 1. # I don't know what the N is supposed to be. 
+
+        return (-1./N)*( target*np.log10(out) + (1-target)*np.log(1-out) )
+
+    def BCEderivative(self, out, target):
+        #TODO figure out what N stands for. And where the loop fits in. 
+        N = 1. # Still don't know what N is.
+        dydtheta = 1. # don't know where to put this. 
+        return (-1./N) * ( (target/float(out)) - ((1-target)/(1-out)) )
+
+
     def train(self, target, epochs=100, learning_rate=0.1, debug=False):
         """
         Uses the initial quess for an ansatz for the model to train and optimise the model ansatz for
@@ -90,8 +108,11 @@ class QML:
         for epoch in range(epochs):
 
             out = self.model()
-            mean_squared_error = (out - target)**2
-            mse_derivative = 2 * (out - target)
+
+            #mean_squared_error = (out - target)**2
+            #mse_derivative = 2 * (out - target)
+            loss = self.lossFunction(out, target)
+            lossDerivative = self.lossDerivative(out, target)
 
             theta_gradient = np.zeros_like(self.theta)
 
@@ -112,8 +133,10 @@ class QML:
 
 
             #print(self.circuit)
-            self.theta = self.theta - learning_rate * theta_gradient * mse_derivative
-            print(mean_squared_error)
+            #self.theta = self.theta - learning_rate * theta_gradient * mse_derivative
+            self.theta = self.theta - learning_rate * theta_gradient * lossDerivative
+            #print(mean_squared_error)
+            print(loss)
 
 
 if __name__ == "__main__":
