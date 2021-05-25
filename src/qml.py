@@ -81,13 +81,11 @@ class QML:
         return self.model_prediction
 
     def BCE(self,out, target):
-        #TODO figure out what N stands for. And where the loop fits in. 
         N = 1. # I don't know what the N is supposed to be. 
 
         return (-1./N)*( target*np.log10(out) + (1-target)*np.log(1-out) )
 
     def BCEderivative(self, out, target):
-        #TODO figure out what N stands for. And where the loop fits in. 
         N = 1. # Still don't know what N is.
         return (-1./N) * ( (target/float(out)) - ((1-target)/(1-out)) )
 
