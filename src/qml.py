@@ -16,7 +16,7 @@ class QML:
         self.n_model_parameters = n_model_parameters
         self.seed = seed
 
-        self.ansatzes = {"basic_ansatz":self.basicAnsatz}
+        self.ansatzes = {"basic_ansatz":self.basicAnsatz, "doubleAnsatz":self.doubleAnsatz}
         self.encoders = {"basic_encoder":self.basicEncoder}
         self.ansatz = self.ansatzes[ansatz]
         self.encoder = self.encoders[encoder]
@@ -25,6 +25,9 @@ class QML:
         self.delLoss = {"BCEderivative": self.BCEderivative}
         self.lossFunction = self.loss[lossfunc]
         self.lossDerivative = self.delLoss[delLoss]
+
+        self.theta = 2*np.pi*np.random.uniform(0,1, size=(self.n_model_parameters))
+        print(self.theta.shape)
 
     def setAnsatz(self, ansatz):
         try:
@@ -41,13 +44,17 @@ class QML:
     #====================================================================================================
     #   === encoders & ansatzes ===
     def basicEncoder(self):
+        """
+        scaling with pi to avoid mapping 0 and 1 to the same rotation.
+        """
         for i, feature in enumerate(self.feature_vector):
-            self.circuit.ry(2*np.pi*feature, self.quantum_register[i])
+            #self.circuit.ry(np.pi*feature, self.quantum_register[i])
+            self.circuit.rx(np.pi*feature, self.quantum_register[i])
 
 
     def basicAnsatz(self):
         for i in range(len(self.feature_vector)):
-            self.circuit.rx(self.theta[i], self.quantum_register[i])
+            self.circuit.ry(self.theta[i], self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
             self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
@@ -55,9 +62,27 @@ class QML:
         self.circuit.ry(self.theta[-1], self.quantum_register[-1])
         self.circuit.measure(self.quantum_register[-1], self.classical_register)
 
+    def doubleAnsatz(self):
+
+        for i in range(len(self.feature_vector)):
+            self.circuit.ry(self.theta[i], self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        for i in range(len(self.feature_vector)):
+            self.circuit.ry(self.theta[self.n_quantum + i], self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+
+        self.circuit.ry(self.theta[-1], self.quantum_register[-1])
+        self.circuit.measure(self.quantum_register[-1], self.classical_register)
+
     #====================================================================================================
 
-    def model(self, backend='qasm_simulator', shots=10000):
+    def model(self, backend='qasm_simulator', shots=1000):
         """
         Set up and run the model with the predefined encoders and ansatzes for the circuit. 
         """
@@ -66,7 +91,6 @@ class QML:
         self.classical_register = qk.ClassicalRegister(self.n_classic)
         self.circuit = qk.QuantumCircuit(self.quantum_register, self.classical_register)
 
-        self.theta = 2*np.pi*np.random.randn(self.n_model_parameters)
 
         self.encoder()
         self.ansatz()
@@ -80,17 +104,15 @@ class QML:
         self.model_prediction = results['0'] / shots
         return self.model_prediction
 
-    def BCE(self,out, target):
-        N = 1. # I don't know what the N is supposed to be. 
 
-        return (-1./N)*( target*np.log10(out) + (1-target)*np.log(1-out) )
+    def BCE(self,out, target):
+        return -( target*np.log10(out) + (1-target)*np.log(1-out) )
 
     def BCEderivative(self, out, target):
-        N = 1. # Still don't know what N is.
-        return (-1./N) * ( (target/float(out)) - ((1-target)/(1-out)) )
+        return -( (target/float(out)) - ((1-target)/(1-out)) )
 
 
-    def train(self, target, epochs=100, learning_rate=1, debug=False):
+    def train(self, target, epochs=100, learning_rate=.1, debug=False):
         """
         Uses the initial quess for an ansatz for the model to train and optimise the model ansatz for
         the given cost/loss function. 
@@ -101,16 +123,17 @@ class QML:
 
             thetaShift = np.zeros([self.n_samples,len(self.theta)])
             loss = np.ones(self.n_samples)
+            lossDerivative = np.zeros_like(loss)
 
             for sample in tqdm(range(self.n_samples)):
-    
+
                 #self.feature_vector = self.featureMatrix.iloc[sample]
                 self.feature_vector = self.featureMatrix[sample, :]
 
                 out = self.model()
 
                 loss[sample] = self.lossFunction(out, target[sample])
-                lossDerivative = self.lossDerivative(out, target[sample])
+                lossDerivative[sample] = self.lossDerivative(out, target[sample])
 
                 theta_gradient = np.zeros_like(self.theta)
 
@@ -129,12 +152,14 @@ class QML:
                         print(f'output 1: {out_1}')
                         print(f'output 2: {out_2}')
 
-                thetaShift[i, :] = - learning_rate * theta_gradient * lossDerivative # theta gradient for vairable shift.
+                    #thetaShift[sample, i] = - learning_rate * theta_gradient * np.mean(lossDerivative) # theta gradient for vairable shift.
+                    thetaShift[sample, i] = theta_gradient[i]
 
-            print(np.average(loss))
+            print(np.mean(loss))
+
 
             #self.theta = self.theta + np.average(thetaShift, axis=0)
-            self.theta += np.average(thetaShift, axis=0)
+            self.theta -= learning_rate * np.mean((thetaShift *  lossDerivative.reshape(-1,1)), axis=0)
         #return self.theta, loss
 
 
@@ -161,7 +186,7 @@ if __name__ == "__main__":
     features = features.iloc[index]
     targets = targets.iloc[index]
 
-    n_model_parameters = features.columns.shape[0] + 1
+    n_model_parameters = 2*features.columns.shape[0] + 1
 
     n_quantum = features.columns.shape[0]
     n_classic = 1
@@ -170,7 +195,7 @@ if __name__ == "__main__":
     features = scaler.fit_transform(features)
 
 
-    qml = QML(n_quantum, n_classic, features, n_model_parameters, seed)
+    qml = QML(n_quantum, n_classic, features, n_model_parameters, seed, ansatz="doubleAnsatz")
 
     #printing circuit layout
     qml.model()
