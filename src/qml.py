@@ -262,14 +262,11 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 5
+    epochs = 100
 
-    #modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    #shotList = [1000, 10000]
-    #learnList = [0.1, 0.5, 1]
-    modelList = ["basicModel"]#, "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    shotList = [1000]#, 10000]
-    learnList = [0.1, 0.5]#, 1]
+    modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    shotList = [1000, 10000]
+    learnList = [0.1, 0.5, 1]
     
     for modelName in modelList:
         for nshots in shotList:
