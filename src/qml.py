@@ -27,7 +27,9 @@ class QML:
                 "doubleAnsatz": self.doubleAnsatz, \
                 "doubleEncoding": self.doubleEncoding,\
                 "doubleAnsatzdoubleEncoding": self.doubleAnsatzdoubleEncoding}
-        self.model = self.models[model]
+
+        self.modelName = model
+        self.model = self.models[self.modelName]
 
         self.loss = {"BCE":self.BCE}
         self.delLoss = {"BCEderivative": self.BCEderivative}
@@ -65,6 +67,11 @@ class QML:
         for i, feature in enumerate(self.feature_vector):
             #self.circuit.ry(np.pi*feature, self.quantum_register[i])
             self.circuit.rx(np.pi*feature, self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        for i in range(self.n_features):
             self.circuit.ry(self.theta[i], self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
@@ -76,49 +83,49 @@ class QML:
     def doubleAnsatz(self):
         for i, feature in enumerate(self.feature_vector):
             self.circuit.rx(np.pi*feature, self.quantum_register[i])
-            self.circuit.ry(self.theta[i], self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
             self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
 
-        for i in range(len(self.feature_vector)):
-            self.circuit.ry(self.theta[self.n_quantum + i], self.quantum_register[i])
+        for j in range(2):
+            for i in range(len(self.feature_vector)):
+                self.circuit.ry(self.theta[j*self.n_quantum + i], self.quantum_register[i])
 
-        for qubit in range(self.n_quantum - 1):
-            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
-
+            for qubit in range(self.n_quantum - 1):
+                self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
 
         self.circuit.ry(self.theta[-1], self.quantum_register[-1])
         self.circuit.measure(self.quantum_register[-1], self.classical_register)
 
 
     def doubleEncoding(self):
-        """
-        could be expanded into "nEncoding" or something where the range is n rather than 2
-        for j in range(self.degree), self.degree=2 as a default
-        """
-        for j in range(2):
-            for i, feature in enumerate(self.feature_vector):
-                self.circuit.rx(np.pi*feature, self.quantum_register[i])
-                self.circuit.ry(self.theta[i], self.quantum_register[i])
+        for i, feature in enumerate(self.feature_vector):
+            self.circuit.rx(np.pi*feature, self.quantum_register[i])
 
-            for qubit in range(self.n_quantum - 1):
-                self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        for i, feature in enumerate(self.feature_vector):
+            self.circuit.ry(self.theta[i], self.quantum_register[i])
+            self.circuit.rx(np.pi*feature, self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
 
         self.circuit.ry(self.theta[-1], self.quantum_register[-1])
+
         self.circuit.measure(self.quantum_register[-1], self.classical_register)
 
     def doubleAnsatzdoubleEncoding(self):
         for j in range(2):
             for i, feature in enumerate(self.feature_vector):
                 self.circuit.rx(np.pi*feature, self.quantum_register[i])
-                self.circuit.ry(self.theta[i], self.quantum_register[i])
 
             for qubit in range(self.n_quantum - 1):
                 self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
 
             for i in range(len(self.feature_vector)):
-                self.circuit.ry(self.theta[self.n_quantum + i], self.quantum_register[i])
+                self.circuit.ry(self.theta[j*self.n_quantum + i], self.quantum_register[i])
 
             for qubit in range(self.n_quantum - 1):
                 self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
@@ -133,12 +140,12 @@ class QML:
     #circuit
     def modelCircuit(self, printC=False):#, backend='qasm_simulator', shots=1000):
         """
-        Set up and run the model with the predefined encoders and ansatzes for the circuit. 
+        Set up and run the model with the predefined encoders and ansatzes for the circuit.
         """
 
-        self.quantum_register = qk.QuantumRegister(self.n_quantum)
-        self.classical_register = qk.ClassicalRegister(self.n_classic)
-        self.circuit = qk.QuantumCircuit(self.quantum_register, self.classical_register)
+        self.quantum_register = qk.QuantumRegister(self.n_quantum, name="q_reg")
+        self.classical_register = qk.ClassicalRegister(self.n_classic, name="c_reg")
+        self.circuit = qk.QuantumCircuit(self.quantum_register, self.classical_register, name=self.modelName)
 
 
         self.model()
@@ -149,28 +156,32 @@ class QML:
                         seed_simulator=self.seed
                         )
         results = job.result().get_counts(self.circuit)
-        self.model_prediction = results['1'] / float(self.shots)
+        counts = 0
+        for key, value in results.items():
+            if key=='1':
+                counts += value
 
-        if printC: 
-            print(self.circuit)
-        del(self.circuit)
-
+        self.model_prediction = counts / float(self.shots)
         return self.model_prediction
 
     #====================================================================================================
     #loss
     def BCE(self,out, target):
-        return -( target*np.log10(out) + (1-target)*np.log(1-out) )
+        #fixing overflow errors in log10
+        eps = 1e-8
+        return -( target*np.log(out + eps) + (1-target)*np.log(1-out + eps))
 
     def BCEderivative(self, out, target):
-        return -( (target/float(out)) - ((1-target)/(1-out)) )
+        #fixing divide by zero error in division
+        eps = 1e-8
+        return -( (target/float(out + eps)) - ((1-target)/(1-out + eps)) )
     #====================================================================================================
 
 
     def train(self, target, epochs=100, learning_rate=.1, debug=False):
         """
         Uses the initial quess for an ansatz for the model to train and optimise the model ansatz for
-        the given cost/loss function. 
+        the given cost/loss function.
         """
         from tqdm import tqdm
 
@@ -217,7 +228,6 @@ class QML:
                     #thetaShift[sample, i] = - learning_rate * theta_gradient * np.mean(lossDerivative) # theta gradient for vairable shift.
                     thetaShift[sample, i] = theta_gradient[i]
 
-
             accuracy[epoch] = float(acc)/self.n_samples
             mean_loss[epoch] = np.mean(loss)
 
@@ -236,9 +246,9 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from sklearn import datasets
     from sklearn.preprocessing import MinMaxScaler
+    import sys
 
     #seed=======================================================
-    #seed = 2021
     seed = 42
     np.random.seed(seed)
 
@@ -269,17 +279,17 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 20
-
+    epochs = 10
+    parameterList = [5, 9, 5, 9]
     modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    modelList = ["doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    shotList = [10000]
+    shotList = [1000]#, 10000]
     learnList = [0.1, 0.5, 1]
-    
-    for modelName in modelList:
+
+    for i, modelName in enumerate(modelList):
+        print(modelName)
         for nshots in shotList:
             for learn in learnList:
-                qml = QML(n_quantum, n_classic, features, n_model_parameters, seed, shots=nshots, model=modelName)#, ansatz="doubleAnsatz")
+                qml = QML(n_quantum, n_classic, features, parameterList[i], seed, shots=nshots, model=modelName)#, ansatz="doubleAnsatz")
 
                 qml.modelCircuit(printC=True)
 
@@ -293,15 +303,21 @@ if __name__ == "__main__":
                 mean loss per epoch[..]
                 accuracy per epoch[..]
                 """
-                filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)
+                filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)+"_epochs"+str(epochs)
                 metaline = "model:" + modelName \
                         + ", seed:" + str(seed) \
                         + ", epochs:" + str(epochs) \
                         + ", learningRate:" + str(learn) \
-                        + ", shots:" + str(nshots) \
+                        + ", shots:" + str(nshots) \﻿
                         +" 1st:model, 2nd:loss, 3rd:accuracy"
 
-                fs = open("data/"+filename+".dat","w")
+
+                if sys.platform == "linux":
+                    fs = open("data/"+filename+".dat", "w")
+
+                elif sys.platform == "win32":
+                    fs = open("data\\"+filename+".dat","w")
+
                 fs.write("#"+metaline); fs.write("\n")
                 fs.write(str(model)); fs.write("\n")
                 fs.write(str(loss)); fs.write("\n")
