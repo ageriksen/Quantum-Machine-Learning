@@ -138,7 +138,7 @@ class QML:
 
     #====================================================================================================
     #circuit
-    def modelCircuit(self):#, backend='qasm_simulator', shots=1000):
+    def modelCircuit(self, printC=False):#, backend='qasm_simulator', shots=1000):
         """
         Set up and run the model with the predefined encoders and ansatzes for the circuit.
         """
@@ -156,7 +156,6 @@ class QML:
                         seed_simulator=self.seed
                         )
         results = job.result().get_counts(self.circuit)
-
         counts = 0
         for key, value in results.items():
             if key=='1':
@@ -191,6 +190,7 @@ class QML:
 
         for epoch in range(epochs):
 
+            #   setup of storage arrays
             thetaShift = np.zeros([self.n_samples,len(self.theta)])
             loss = np.ones(self.n_samples)
             lossDerivative = np.zeros_like(loss)
@@ -291,9 +291,8 @@ if __name__ == "__main__":
             for learn in learnList:
                 qml = QML(n_quantum, n_classic, features, parameterList[i], seed, shots=nshots, model=modelName)#, ansatz="doubleAnsatz")
 
-                #printing circuit layout
-                qml.modelCircuit()
-                print(qml.circuit)
+                qml.modelCircuit(printC=True)
+
 
                 model, loss, accuracy = qml.train(targets, epochs=epochs, learning_rate=learn)
                 """
@@ -309,7 +308,7 @@ if __name__ == "__main__":
                         + ", seed:" + str(seed) \
                         + ", epochs:" + str(epochs) \
                         + ", learningRate:" + str(learn) \
-                        + ", shots:" + str(nshots) \
+                        + ", shots:" + str(nshots) \﻿
                         +" 1st:model, 2nd:loss, 3rd:accuracy"
 
 
