@@ -279,11 +279,11 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 30
+    epochs = 10
     parameterList = [5, 9, 5, 9]
     modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [1000]#, 10000]
-    learnList = [0.1]#, 0.5, 1]
+    learnList = [0.1, 0.5, 1]
 
     for i, modelName in enumerate(modelList):
         print(modelName)
@@ -304,7 +304,7 @@ if __name__ == "__main__":
                 mean loss per epoch[..]
                 accuracy per epoch[..]
                 """
-                filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)
+                filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)+"_epochs"+str(epochs)
                 metaline = "model:" + modelName \
                         + ", seed:" + str(seed) \
                         + ", epochs:" + str(epochs) \
