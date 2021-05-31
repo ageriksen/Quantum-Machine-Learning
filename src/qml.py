@@ -238,7 +238,8 @@ if __name__ == "__main__":
     from sklearn.preprocessing import MinMaxScaler
 
     #seed=======================================================
-    seed = 2021
+    #seed = 2021
+    seed = 42
     np.random.seed(seed)
 
     #import and preprocess data=================================
@@ -268,9 +269,10 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 40
+    epochs = 20
 
     modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    modelList = ["doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [10000]
     learnList = [0.1, 0.5, 1]
     
