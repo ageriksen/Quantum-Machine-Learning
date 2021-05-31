@@ -133,7 +133,7 @@ class QML:
     #circuit
     def modelCircuit(self):#, backend='qasm_simulator', shots=1000):
         """
-        Set up and run the model with the predefined encoders and ansatzes for the circuit. 
+        Set up and run the model with the predefined encoders and ansatzes for the circuit.
         """
 
         self.quantum_register = qk.QuantumRegister(self.n_quantum)
@@ -165,7 +165,7 @@ class QML:
     def train(self, target, epochs=100, learning_rate=.1, debug=False):
         """
         Uses the initial quess for an ansatz for the model to train and optimise the model ansatz for
-        the given cost/loss function. 
+        the given cost/loss function.
         """
         from tqdm import tqdm
 
@@ -230,9 +230,10 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from sklearn import datasets
     from sklearn.preprocessing import MinMaxScaler
+    import sys
 
     #seed=======================================================
-    seed = 2021
+    seed = 42
     np.random.seed(seed)
 
     #import and preprocess data=================================
@@ -262,12 +263,12 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 100
+    epochs = 30
 
     modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [1000, 10000]
     learnList = [0.1, 0.5, 1]
-    
+
     for modelName in modelList:
         for nshots in shotList:
             for learn in learnList:
@@ -294,7 +295,13 @@ if __name__ == "__main__":
                         + ", shots:" + str(nshots) \
                         +" 1st:model, 2nd:loss, 3rd:accuracy"
 
-                fs = open("data/"+filename+".dat","w")
+
+                if sys.platform == "linux":
+                    fs = open("data/"+filename+".dat", "w")
+
+                elif sys.platform == "win32":
+                    fs = open("data\\"+filename+".dat","w")
+
                 fs.write("#"+metaline); fs.write("\n")
                 fs.write(str(model)); fs.write("\n")
                 fs.write(str(loss)); fs.write("\n")
