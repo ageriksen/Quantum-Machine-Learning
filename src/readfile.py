@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import glob
+import matplotlib.pyplot as plt
 
-filename = "somestring"
+filenames = glob.glob('data/*')
 
-with open("data/"+filename+".dat") as fs:
-    lines = fs.readlines()
+#for filename in filenames:
+#    with open(filename) as fs:
+#        lines = fs.readlines()
+#
+#    print(lines)
+#
+#    break
 
-print(lines)
+#for filename in filenames:
+#    lines = filename.read().split(' ')
 
-array = np.array(lines[1])
-print(array)
+from numpy import loadtxt
 
+lines = loadtxt(filenames[0], comments="#", delimiter=' ')
 
 """
 want to try variable 
