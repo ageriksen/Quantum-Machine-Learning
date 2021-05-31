@@ -131,7 +131,7 @@ class QML:
 
     #====================================================================================================
     #circuit
-    def modelCircuit(self):#, backend='qasm_simulator', shots=1000):
+    def modelCircuit(self, printC=False):#, backend='qasm_simulator', shots=1000):
         """
         Set up and run the model with the predefined encoders and ansatzes for the circuit. 
         """
@@ -150,6 +150,11 @@ class QML:
                         )
         results = job.result().get_counts(self.circuit)
         self.model_prediction = results['1'] / float(self.shots)
+
+        if printC: 
+            print(self.circuit)
+        del(self.circuit)
+
         return self.model_prediction
 
     #====================================================================================================
@@ -174,6 +179,7 @@ class QML:
 
         for epoch in range(epochs):
 
+            #   setup of storage arrays
             thetaShift = np.zeros([self.n_samples,len(self.theta)])
             loss = np.ones(self.n_samples)
             lossDerivative = np.zeros_like(loss)
@@ -262,10 +268,10 @@ if __name__ == "__main__":
     #shots = 1000
 
     #learningRate = 0.1
-    epochs = 100
+    epochs = 40
 
     modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    shotList = [1000, 10000]
+    shotList = [10000]
     learnList = [0.1, 0.5, 1]
     
     for modelName in modelList:
@@ -273,9 +279,8 @@ if __name__ == "__main__":
             for learn in learnList:
                 qml = QML(n_quantum, n_classic, features, n_model_parameters, seed, shots=nshots, model=modelName)#, ansatz="doubleAnsatz")
 
-                #printing circuit layout
-                qml.modelCircuit()
-                print(qml.circuit)
+                qml.modelCircuit(printC=True)
+
 
                 model, loss, accuracy = qml.train(targets, epochs=epochs, learning_rate=learn)
                 """
