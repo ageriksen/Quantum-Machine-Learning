@@ -97,8 +97,7 @@ class QML:
         self.circuit.ry(self.theta[-1], self.quantum_register[-1])
         self.circuit.measure(self.quantum_register[-1], self.classical_register)
 
-
-    def doubleEncoding(self):
+    def lessEntangled(self):
         for i, feature in enumerate(self.feature_vector):
             self.circuit.rx(np.pi*feature, self.quantum_register[i])
 
@@ -107,6 +106,29 @@ class QML:
 
         for i, feature in enumerate(self.feature_vector):
             self.circuit.ry(self.theta[i], self.quantum_register[i])
+            self.circuit.rx(np.pi*feature, self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        self.circuit.ry(self.theta[-1], self.quantum_register[-1])
+
+        self.circuit.measure(self.quantum_register[-1], self.classical_register)
+
+    def doubleEncoding(self):
+        for i, feature in enumerate(self.feature_vector):
+            self.circuit.rx(np.pi*feature, self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        for i in range(self.n_features):
+            self.circuit.ry(self.theta[i], self.quantum_register[i])
+
+        for qubit in range(self.n_quantum - 1):
+            self.circuit.cx(self.quantum_register[qubit], self.quantum_register[qubit + 1])
+
+        for i, feature in enumerate(self.feature_vector):
             self.circuit.rx(np.pi*feature, self.quantum_register[i])
 
         for qubit in range(self.n_quantum - 1):
@@ -246,6 +268,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from sklearn import datasets
     from sklearn.preprocessing import MinMaxScaler
+    from qiskit.visualization import circuit_drawer
     import sys
 
     #seed=======================================================
@@ -280,9 +303,9 @@ if __name__ == "__main__":
 
     #learningRate = 0.1
     epochs = 10
-    parameterList = [5, 9, 5, 9]
-    modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
-    shotList = [1000]#, 10000]
+    parameterList = [5]#[5, 9, 5, 5, 9]
+    modelList = ["doubleEncoding"]#["basicModel", "doubleAnsatz", "lessEntangled", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    shotList = [1000, 10000]
     learnList = [0.1, 0.5, 1]
 
     for i, modelName in enumerate(modelList):
@@ -293,6 +316,10 @@ if __name__ == "__main__":
 
                 qml.modelCircuit(printC=True)
 
+                """(comment here to uncomment :P) to make circuit diagrams for article
+                circuit_drawer(qml.circuit, output='mpl')
+                plt.show()
+                """
 
                 model, loss, accuracy = qml.train(targets, epochs=epochs, learning_rate=learn)
                 """
@@ -308,7 +335,7 @@ if __name__ == "__main__":
                         + ", seed:" + str(seed) \
                         + ", epochs:" + str(epochs) \
                         + ", learningRate:" + str(learn) \
-                        + ", shots:" + str(nshots) \﻿
+                        + ", shots:" + str(nshots) \
                         +" 1st:model, 2nd:loss, 3rd:accuracy"
 
 

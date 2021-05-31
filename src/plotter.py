@@ -34,8 +34,8 @@ def make_numpy_arrays(filename, n_thetas, epochs=10):
 
 if __name__=='__main__':
     #filename = "modelbasicModel_lrn0.5_shots1000_epochs10"
-    parameterList = [5, 9, 5, 9]
-    modelList = ["basicModel", "doubleAnsatz", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    parameterList = [5, 9, 5, 5, 9]
+    modelList = ["basicModel", "doubleAnsatz", "lessEntangled", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [1000, 10000]
     learnList = [0.1, 0.5, 1]
     epochs = 10
