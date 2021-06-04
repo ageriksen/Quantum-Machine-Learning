@@ -240,12 +240,15 @@ if __name__ == "__main__":
 
     #shots = 1000
 
+    #import tracemalloc
+    #tracemalloc.start(25)
+
     #learningRate = 0.1
-    epochs = 10
-    parameterList = [9]#[5, 9, 5, 5, 9]
-    modelList = ["basicModel"]#["basicModel", "doubleAnsatz", "lessEntangled", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    epochs = 50
+    parameterList = [5, 9, 5, 5, 9]
+    modelList = ["basicModel", "doubleAnsatz", "lessEntangled", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [1000, 10000]
-    learnList = [0.1, 0.5, 1]
+    learnList = [0.5, 0.75, 1, 1.25]
 
     for i, modelName in enumerate(modelList):
         print(modelName)
@@ -289,3 +292,10 @@ if __name__ == "__main__":
                 #fs.write(str(loss)); fs.write("\n")
                 #fs.write(str(accuracy));
                 #fs.close()
+    #snapshot = tracemalloc.take_snapshot()
+    #top_stats = snapshot.statistics('traceback')
+    #
+    #stat = top_stats[0]
+    #print("%s memory blocks: %.1f KiB" % (stat.count, stat.size/1024) )
+    #for line in stat.traceback.format():
+    #    print(line)
