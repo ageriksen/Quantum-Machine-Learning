@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 
 def make_numpy_arrays(filename, n_thetas, epochs=10):
@@ -9,8 +10,12 @@ def make_numpy_arrays(filename, n_thetas, epochs=10):
 
     epochs = 10
     """
-    with open("data\\"+filename+".dat") as fs:
-        lines = fs.readlines()
+    if sys.platform == "linux":
+        with open("data/"+filename+".dat") as fs:
+            lines = fs.readlines()
+    elif sys.platform == "win32":
+        with open("data\\"+filename+".dat") as fs:
+            lines = fs.readlines()
 
     thetas_line = lines[1].strip('\\n').strip(' ')[1:-2]
     loss_line = lines[2].strip('\\n').strip(' ')[1:-2]
