@@ -1,9 +1,9 @@
 # Quantum-Machine-Learning
 Repo for project 2, Comp. phys II 2021
 
-### report in report/FYS4411_Project_2.pdf
+### Report in report/FYS4411_Project_2.pdf
 
-### code in src/qml.py
+### Code in src/qml.py
 There are no additional call arguments to run the code.
 The models are chosen through string names corresponding
 to implemented functions in the class. The class 
