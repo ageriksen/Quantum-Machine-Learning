@@ -14,7 +14,7 @@ the script.
 ### Run results in data/
 the results after runs are stored in files with names corresponding
 to the run. The structure of the resuts are made as
-> \# A meta line with a pound to comment
-> The model theta values
-> The loss averaged over samples per epoch
-> the accuracy of prediction per epoch
+1. \# A meta line with a pound to comment
+2. The model theta values
+3. The loss averaged over samples per epoch
+4. the accuracy of prediction per epoch
