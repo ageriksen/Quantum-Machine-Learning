@@ -194,6 +194,7 @@ class QML:
 
             self.theta -= learning_rate * np.mean((thetaShift *  lossDerivative.reshape(-1,1)), axis=0)
 
+            print("epoch:   ", epoch)
             print("mean loss per epoch: ", mean_loss[epoch])
             print("accuracy per epoch: ", accuracy[epoch])
         return self.theta, mean_loss, accuracy
@@ -244,9 +245,9 @@ if __name__ == "__main__":
     #tracemalloc.start(25)
 
     #learningRate = 0.1
-    epochs = 50
-    parameterList = [5, 9, 5, 5, 9]
-    modelList = ["basicModel", "doubleAnsatz", "lessEntangled", "doubleEncoding", "doubleAnsatzdoubleEncoding"]
+    epochs = 100
+    parameterList = [5, 9, 5, 9]
+    modelList = ["basicModel", "doubleAnsatz",  "doubleEncoding", "doubleAnsatzdoubleEncoding"]
     shotList = [1000, 10000]
     learnList = [0.5, 0.75, 1, 1.25]
 
@@ -254,6 +255,9 @@ if __name__ == "__main__":
         print(modelName)
         for nshots in shotList:
             for learn in learnList:
+                print("model:", modelName)
+                print("shots:", nshots)
+                print("learning rate:", learn)
                 qml = QML(n_quantum, n_classic, features, parameterList[i], seed, shots=nshots, model=modelName)#, ansatz="doubleAnsatz")
 
                 qml.modelCircuit(printC=True)
@@ -272,26 +276,26 @@ if __name__ == "__main__":
                 mean loss per epoch[..]
                 accuracy per epoch[..]
                 """
-                #filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)+"_epochs"+str(epochs)
-                #metaline = "model:" + modelName \
-                #        + ", seed:" + str(seed) \
-                #        + ", epochs:" + str(epochs) \
-                #        + ", learningRate:" + str(learn) \
-                #        + ", shots:" + str(nshots) \
-                #        +" 1st:model, 2nd:loss, 3rd:accuracy"
+                filename = "model"+modelName+"_lrn"+str(learn)+"_shots"+str(nshots)+"_epochs"+str(epochs)
+                metaline = "model:" + modelName \
+                        + ", seed:" + str(seed) \
+                        + ", epochs:" + str(epochs) \
+                        + ", learningRate:" + str(learn) \
+                        + ", shots:" + str(nshots) \
+                        +" 1st:model, 2nd:loss, 3rd:accuracy"
 
 
-                #if sys.platform == "linux":
-                #    fs = open("data/"+filename+".dat", "w")
+                if sys.platform == "linux":
+                    fs = open("data/"+filename+".dat", "w")
 
-                #elif sys.platform == "win32":
-                #    fs = open("data\\"+filename+".dat","w")
+                elif sys.platform == "win32":
+                    fs = open("data\\"+filename+".dat","w")
 
-                #fs.write("#"+metaline); fs.write("\n")
-                #fs.write(str(model)); fs.write("\n")
-                #fs.write(str(loss)); fs.write("\n")
-                #fs.write(str(accuracy));
-                #fs.close()
+                fs.write("#"+metaline); fs.write("\n")
+                fs.write(str(model)); fs.write("\n")
+                fs.write(str(loss)); fs.write("\n")
+                fs.write(str(accuracy));
+                fs.close()
     #snapshot = tracemalloc.take_snapshot()
     #top_stats = snapshot.statistics('traceback')
     #
